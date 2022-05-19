@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<meta content="text/html; charset=utf-8" http-equiv="content-type" />
+		<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+		<script src="./pako.min.js"></script>
+		<title>课件浏览器</title>
+		<style>
+			body{background-color: rgb(50, 54, 57); user-select: none;margin:0px;}
+			.ctrl{font-size:14px; border-radius:15px; padding:5px; padding-left:13px; padding-right:13px; background-color: rgb(51, 51, 51); color:#FFF; border:1px solid #CCC;} .msg{position:fixed; top:15px; left:15px; z-index:5;}
+			img{width:60%; min-width:355px; margin-top:5px; border-radius:4px;}
+			.printBtn{margin:10px;} a{color:#FFF; text-decoration:none;}
+			#jd{display:none;}
+		</style>
+	</head>
+	<body>
+		<div class="ctrl msg" id="pcnt"></div>
+		<script>
+			function printmode(){document.getElementsByClassName("msg")[0].remove();document.getElementsByTagName("style")[0].innerText = "img{width:100%;margin-top:15px;}";}
+			
+		</script>
+		<center id="mb">
+			<button onclick="this.remove();printmode();" class="ctrl printBtn">PRINT&nbsp;&amp;&nbsp;PDF STORAGE MODE</button>
+		</center>
+		<script>
+		
+		function $GET(){
+			let url = window.location.href;
+			url = url.split("#")[1];
+			url = pako.ungzip(window.atob(url), {to: "string"});
+			return url.split(",");
+		}
+		function shit(){
+			let dochtml = "";
+			let PageCnt = 0;
+			let filelist = $GET();
+			let obj = [];
+			var ImgBasicUrl = "https://cstore-private-bs.seewo.com/easinote/encloud-";
+			var ImgOption = "?x-oss-process=image%2Fresize%2Cw_960%2Ch_640%2Fformat%2Cjpg";
+			
+			if(filelist[0] != "undefined"){
+				for(let i = 0; i < filelist.length; i ++){
+					if(filelist[i]) {
+						let fileUrl = ImgBasicUrl + filelist[i].replace("undefined", "") + ImgOption;
+						dochtml += "<img src='" + fileUrl  + "' title='Page " + (i + 1) + "'><br>";
+						PageCnt += 1;
+					}
+				}
+				document.getElementById("mb").innerHTML = dochtml + document.getElementById("mb").innerHTML;
+				document.getElementById("pcnt").innerHTML = "共" + PageCnt + " 页";
+			} else {
+				document.write("<title>ERROR</title><h2>SORRY, SOMETHING WRONG</h2><hr><b>Unexpected Error!</b>");
+			}
+		}
+		shit();
+		</script>
+		
+	</body>
+</html>
