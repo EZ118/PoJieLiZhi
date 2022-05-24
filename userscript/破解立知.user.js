@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         破解立知
 // @namespace    https://ez118.github.io/
-// @version      5.1
+// @version      5.2
 // @description  破解立知课堂工具（由两位来自上海市某中学的青年共同编制、调试和维护）
 // @author       ZZY_WISU
 // @match        https://*.imlizhi.com/slive/pc/*
@@ -70,18 +70,26 @@ function RemoveCover() {
     }catch(e){}
 }
 
-function RemoveHand(){
+function RemoveHand(mode){
+    if (typeof mode === 'undefined') {mode = "HideHand";}
     try{
-       var parent= document.getElementsByClassName('live-raise-hand live-pc-raise-hand live-student-raise-hand')[0];
-       parent.setAttribute("style", "visibility: hidden;");
-    }catch(e){}
+        let parent = document.getElementsByClassName('live-raise-hand live-pc-raise-hand live-student-raise-hand')[0];
+        if(mode == "HideHand"){parent.setAttribute("style", "visibility: hidden;");}
+        else {
+            parent.setAttribute("style", "width:25px; height:25px; overflow:hidden; border-radius:10px;");
+            document.getElementsByClassName('live-raise-hand-item')[0].setAttribute("style", "width: 25px;height:25px;");
+        }
+    }catch(e){
+        alert("未能在页面上找到举手按钮");
+        return;
+    }
 }
 
 function BadGuyMode(){
-    var test_value = confirm("请选择是否打开坏小孩模式，打开后将会在进入教室后自动执行以下功能（解锁学生操作课件限制、解除讨论区字符限制、移除课前等待遮罩、移除举手按钮）");
-    alert("打开状态：" + test_value);
-    if(test_value == true) { GM_setValue('BadGuyMode', {'state':'true'}); }
-    else { GM_setValue('BadGuyMode', {'state':'false'}); }
+    var test_value = confirm("请选择，是否打开骇客模式？\n提示：骇客模式相较于坏小孩模式去除了自动移除举手按钮。\n打开后将会在进入教室后自动执行以下功能: \n解锁学生操作课件限制、解除讨论区字符限制、移除课前等待遮罩、缩小举手按钮。");
+
+    if(test_value == true) { GM_setValue('BadGuyMode', {'state':'true'}); alert("已开启“骇客模式”！");}
+    else { GM_setValue('BadGuyMode', {'state':'false'}); alert("已关闭“骇客模式”！");}
 }
 
 function CheckUpdate(){
@@ -99,8 +107,8 @@ let menu1 = GM_registerMenuCommand('手动打开课件浏览器', function () { 
 let menu2 = GM_registerMenuCommand('解锁学生操作课件限制', function () { UnlockLimit(); }, 'U');
 let menu3 = GM_registerMenuCommand('解除讨论区字符限制', function () { MsgWordNumBreak(); }, 'M');
 let menu4 = GM_registerMenuCommand('移除课前等待遮罩', function () { RemoveCover(); }, 'R');
-let menu5 = GM_registerMenuCommand('移除举手按钮', function () { RemoveHand(); }, 'H');
-let menu6 = GM_registerMenuCommand('坏小孩模式', function () { BadGuyMode(); }, 'B');
+let menu5 = GM_registerMenuCommand('移除举手按钮', function () { RemoveHand("HideHand"); }, 'H');
+let menu6 = GM_registerMenuCommand('骇客模式', function () { BadGuyMode(); }, 'B');
 let menu7 = GM_registerMenuCommand('查检更新', function () { CheckUpdate(); }, 'C');
 /* 以上为菜单设定 */
 
@@ -177,7 +185,7 @@ function runAsync(url,send_type,data_ry) {
             setTimeout(function() {
                 UnlockLimit();
                 RemoveCover();
-                RemoveHand();
+                RemoveHand("MinimizeHand");
                 MsgWordNumBreak();
             }, 6000);
         }
