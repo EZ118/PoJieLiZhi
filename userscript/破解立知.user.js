@@ -1,41 +1,33 @@
 // ==UserScript==
 // @name         破解立知
 // @namespace    https://ez118.github.io/
-// @version      6.4
-// @description  立知课堂破解工具，提供线上教室前后端双重破解功能，拥有手动+自动双破解模式，增强你的立知课堂！作者承诺：绝不侵犯用户隐私！
+// @version      6.9
+// @description  立知课堂破解工具，提供丰富功能（由上海市某中学的多位青年于2022上海疫情风控时期共同开发、支持、调试和维护）
 // @author       ZZY_WISU
 // @match        https://*.imlizhi.com/slive/pc/*
 // @match        https://easilive.seewo.com/*
 // @license      GNU GPLv3
-// @icon         https://s2.imlizhi.com/slive/pc/favicon.ico
+// @icon         https://easilive.seewo.com/favicon.ico
 // @run-at document-end
 // @grant        GM_xmlhttpRequest
 // @grant        GM_download
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
+// @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @require      https://cdn.bootcss.com/pako/1.0.6/pako.min.js
 // ==/UserScript==
 
-/*
-使用前必读：
-1. 该脚本由ZZY_WISU(网名)所有，基于该项目的工程需参照GNU GPLv3协议并履行；
-2. 该脚本不会收集用户个人数据，不会利用本地用户数据；
-3. 请合理使用该脚本！
-4. 该脚本的课件分享部分使用了pako.min.js
-5. 该脚本的项目仓库地址：https://github.com/EZ118/PoJieLiZhi/
-6. 该脚本的官方唯一下载渠道（Github除外）：https://greasyfork.org/zh-CN/scripts/441933-破解立知/
-*/
 
-
-
-/*   自定义部分   */
+/*   自定义部分   */
 
 var verlist = [69, 50 ,40, 36, 29, 25, 19, 14, 11, 8, 4, 1];
 //破解列表
 
+//var api = "https://s.imlizhi.com/slive/pc/enow/thumbnail/api/v1/courseware";
 var api = "https://s2.imlizhi.com/slive/pc/enow/thumbnail/api/v1/courseware";
+
 //对接官方接口
 
 var ReaderUrl = "https://easilive.seewo.com/ZZY_WISU/";
@@ -47,56 +39,83 @@ var ScriptUrl = "https://greasyfork.org/scripts/441933-%E7%A0%B4%E8%A7%A3%E7%AB%
 var MaxPageNum = 200;
 //用于储存最大课件页面数量
 
-var ShareReaderUrl = "https://ez118.github.io/static/PoJieLiZhi/";
-//分享的课件的阅读器链接（默认为作者个人建立的阅读器，你也可以参照并下载//github.com/EZ118/EZ118.github.io/blob/master/static/PoJieLiZhi/index.html，以此建立自己的阅读器）
+var ShareReaderUrl = "https://ez118.github.io/CommonStyle/static/PoJieLiZhi/";
+//分享的课件的阅读器链接（默认为作者个人建立的阅读器，你也可以参照并下载 https://github.com/EZ118/PoJieLiZhi/tree/main/ShareReader ，以此建立自己的共享课件阅览器服务）
 
 var AutoAnswerText = "老师好~😄😄😄";
-
 /*以上为自定义部分*/
+
 
 /* 以下为菜单设定 */
 function OpenExplorer(cid, title, ver) {
-    //let cid = document.getElementsByClassName("enow__stage-wrap")[0].id.replace("stage-", "");
-    //let title = document.getElementsByTagName("title")[0].innerText;
-    if(ver > 0){
-        ver -= 1;
-        if (GM_getValue('Settings')[1] == "1") {
-            let WinTop = (window.screen.availHeight - 350) / 2; let WinLeft = (window.screen.availWidth - 640) / 2;
-            let myWindow = window.open(ReaderUrl + "@" + cid + "@11@" + encodeURI(title) + "@" + ver, '', 'width=640, height=400, top=' + WinTop + ', left=' + WinLeft);
-        } else { window.open(ReaderUrl + "@" + cid + "@11@" + encodeURI(title) + "@" + ver); }
-    }
-    else {
-        if (GM_getValue('Settings')[1] == "1") {
-            let WinTop = (window.screen.availHeight - 350) / 2; let WinLeft = (window.screen.availWidth - 640) / 2;
-            let myWindow = window.open(ReaderUrl + "@" + cid + "@0@" + encodeURI(title) + "@0", '', 'width=640, height=400, top=' + WinTop + ', left=' + WinLeft);
-        } else { window.open(ReaderUrl + "@" + cid + "@0@" + encodeURI(title) + "@0"); }
+    ver -= 1;
+    if (GM_getValue('Settings')[1] == "1") {
+        let WinTop = (window.screen.availHeight - 350) / 2;
+        let WinLeft = (window.screen.availWidth - 640) / 2;
+        let myWindow = window.open(ReaderUrl + "@" + cid + "@11@" + encodeURI(title) + "@" + ver, '', 'width=640, height=400, top=' + WinTop + ', left=' + WinLeft);
+    } else {
+        window.open(ReaderUrl + "@" + cid + "@11@" + encodeURI(title) + "@" + ver);
     }
 }
-function GetList(){
-	var uid = window.location.href.split("?")[1].split("&")[0].split("=")[1];
-	var ServerTime = new Date().getTime();
-	var xhttp = null;
-	if (window.XMLHttpRequest){ xhttp = new XMLHttpRequest(); } else if (window.ActiveXObject){ xhttp = new ActiveXObject('Microsoft.XMLHTTP'); }
-	xhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			let jstr = eval("(" + this.responseText + ")");
-			if (jstr.error_code == 0){
-				let OPStr = "";
-				for (var i = 0; i <= 10; i ++) { try{ OPStr += (i + 1) + ". " + jstr.data[i].name + "\n"; } catch(e){} }
-				let k = prompt("请选择需要打开的课件（填数字编号）\n" + OPStr, "1");
-				OpenExplorer(jstr.data[k - 1].cid, jstr.data[k - 1].name, jstr.data[k - 1].version);
-			}
-		} else if (this.status == 404) {
-            let cid = document.getElementsByClassName("enow__stage-wrap")[0].id.replace("stage-", "");
-            let title = document.getElementsByTagName("title")[0].innerText;
-            let ver = 0;
-            OpenExplorer(cid, title, ver);
-            return 0;
+function GetReplayList(){
+    /*获取回放的课件列表*/
+    var uid = window.location.href.split("?")[1].split("&")[0].split("=")[1];
+    var ServerTime = new Date().getTime();
+    var xhttp = null;
+
+    if (window.XMLHttpRequest){ xhttp = new XMLHttpRequest(); }
+    else if (window.ActiveXObject){ xhttp = new ActiveXObject('Microsoft.XMLHTTP'); }
+
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            let jstr = eval("(" + this.responseText + ")");
+            if (jstr.error_code == 0){
+                let OPStr = "";
+                for (var i = 0; i <= 10; i ++) {
+                    try{
+                        OPStr += (i + 1) + ". " + jstr.data.capsuleDetail.cwList[i].cwName + "\n";
+                    } catch(e){}
+                }
+                let k = prompt("请选择需要打开的课件（填数字编号）\n" + OPStr, "1");
+                OpenExplorer(jstr.data.capsuleDetail.cwList[k - 1].cwId, jstr.data.capsuleDetail.cwList[k - 1].cwName, jstr.data.capsuleDetail.cwList[k - 1].cwVersion);
+            }
+        } else if (this.readyState == 4 && this.status == 404) {
+            alert("Oh Shit! 失败了!");
         }
-	};
-	xhttp.open("POST", "./apis.json?actionName=GET_COURSE_ACCESS_CODE_LIST&t=" + ServerTime, true);
-	xhttp.setRequestHeader('Content-Type','application/json');
-	xhttp.send('{"courseUid":"' + uid + '"}');
+    };
+    xhttp.open("POST", "../apis.json?actionName=GET_PLAYBACK_DETAIL&ts=" + ServerTime, true);
+    xhttp.setRequestHeader('Content-Type','application/json');
+    xhttp.send('{"courseUid":"' + uid + '"}');
+}
+function GetLiveList(){
+    /*获取直播课的课件列表*/
+    var uid = window.location.href.split("?")[1].split("&")[0].split("=")[1];
+    var ServerTime = new Date().getTime();
+    var xhttp = null;
+    if (window.XMLHttpRequest){ xhttp = new XMLHttpRequest(); }
+    else if (window.ActiveXObject){ xhttp = new ActiveXObject('Microsoft.XMLHTTP'); }
+
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            let jstr = eval("(" + this.responseText + ")");
+            if (jstr.error_code == 0){
+                let OPStr = "";
+                for (var i = 0; i <= 10; i ++) {
+                    try{
+                        OPStr += (i + 1) + ". " + jstr.data[i].name + "\n";
+                    } catch(e){}
+                }
+                let k = prompt("请选择需要打开的课件（填数字编号）\n" + OPStr, "1");
+                OpenExplorer(jstr.data[k - 1].cid, jstr.data[k - 1].name, jstr.data[k - 1].version);
+            }
+        } else if (this.readyState == 4 &&this.status == 404) {
+            GetReplayList();
+            return;
+        }
+    };
+    xhttp.open("POST", "./apis.json?actionName=GET_COURSE_ACCESS_CODE_LIST&t=" + ServerTime, true);
+    xhttp.setRequestHeader('Content-Type','application/json');
+    xhttp.send('{"courseUid":"' + uid + '"}');
 }
 
 
@@ -121,31 +140,38 @@ function RemoveHand(mode){
     } catch(e){}
 }
 
+
 function Settings(){
     var OldSettingStr = GM_getValue('Settings');
-    if (OldSettingStr == "" || OldSettingStr == null) { OldSettingStr = "000"; }
+    if (OldSettingStr == "" || OldSettingStr == null) { OldSettingStr = "0000"; }
     let NewSettingStr = prompt(`【欢迎使用偏好设置】
     请在输入框内依次填写每个条目的状态(1为开，0为关，不可以不填)
     1. 屏蔽广告功能
     2. 以弹窗形式打开课件浏览器
     3. 骇客模式（解锁操作课件限制、解除讨论区字符长度限制、移除课前等待界面、缩小举手按钮）
-    4. 进入教室自动在文本框内填充问候语（点击发送按钮前需要在）`, OldSettingStr);
+    4. 进入教室自动在文本框内填充问候语`, OldSettingStr);
     if (NewSettingStr != null && NewSettingStr != "") { GM_setValue('Settings', NewSettingStr) } else { return; }
 }
 
-
-
-let menu1 = GM_registerMenuCommand('浏览教师课件', function () { /*OpenExplorer();*/ GetList(); }, 'O');
-let menu2 = GM_registerMenuCommand('解除操作课件限制', function () { UnlockLimit(); }, 'U');
-let menu3 = GM_registerMenuCommand('解除讨论区字符限制', function () { MsgWordNumBreak(); }, 'M');
-let menu4 = GM_registerMenuCommand('移除课前等待遮罩', function () { RemoveCover(); }, 'R');
-let menu5 = GM_registerMenuCommand('隐藏举手按钮', function () { RemoveHand("HideHand"); }, 'H');
-let menu6 = GM_registerMenuCommand('偏好设置', function () { Settings(); }, 'S');
-let menu7 = GM_registerMenuCommand('讨论区刷屏（Beta）', function() {
+let menu1 = GM_registerMenuCommand('浏览教师课件', function () { GetLiveList(); }, 'o');
+let menu2 = GM_registerMenuCommand('解除操作课件限制', function () { UnlockLimit(); }, 'u');
+let menu3 = GM_registerMenuCommand('解除讨论区字符限制', function () { MsgWordNumBreak(); }, 'm');
+let menu4 = GM_registerMenuCommand('移除课前等待遮罩', function () { RemoveCover(); }, 'r');
+let menu5 = GM_registerMenuCommand('解除文本选择限制', function () {
+    try{
+        document.getElementById('enow__non-interacte-hover').setAttribute("style", "display:none;");
+    } catch(e){}
+    GM_addStyle("body{ user-select:text!important;}");
+    GM_addStyle("span{ user-select:text!important;}");
+}, 's');
+let menu6 = GM_registerMenuCommand('隐藏举手按钮', function () { RemoveHand("HideHand"); }, 'h');
+let menu7 = GM_registerMenuCommand('讨论区刷屏', function() {
     function Send(con,rid){var uid=window.location.href.split("?")[1].split("&")[0].split("=")[1];var ServerTime=new Date().getTime();var xhttp=null;if(window.XMLHttpRequest){xhttp=new XMLHttpRequest()}else if(window.ActiveXObject){xhttp=new ActiveXObject('Microsoft.XMLHTTP')}xhttp.onreadystatechange=function(){if(this.readyState==4&&this.status==200){var jstr=eval("("+this.responseText+")");if(jstr.error_code==0){}else{}}};xhttp.open("POST","./apis.json?actionName=CHAT_SEND_QUESTION&t="+ServerTime,true);xhttp.setRequestHeader('Content-Type','application/json');xhttp.send('{"roomId":"'+rid+'","courseUid":"'+uid+'","text":"'+con+'"}')}
     function GetRoomId(){var uid=window.location.href.split("?")[1].split("&")[0].split("=")[1];var ServerTime=new Date().getTime();var xhttp=null;if(window.XMLHttpRequest){xhttp=new XMLHttpRequest()}else if(window.ActiveXObject){xhttp=new ActiveXObject('Microsoft.XMLHTTP')}xhttp.onreadystatechange=function(){if(this.readyState==4&&this.status==200){var jstr=eval("("+this.responseText+")");let rid=jstr.data.roomId;var SqStr=prompt("请输入想要发送的内容：","");if(SqStr==null){return}var SqTimeSet=prompt("请输入想要发送的次数：","1");for(let i=1;i<=SqTimeSet;i++){Send(SqStr,rid)}}};xhttp.open("POST","./apis.json?actionName=GET_TARGET_COURSE&t="+ServerTime,true);xhttp.setRequestHeader('Content-Type','application/json');xhttp.send('{"courseUid":"'+uid+'"}');}
     GetRoomId();
-}, 'G');
+}, 'g');
+let menu100 = GM_registerMenuCommand('偏好设置', function () { Settings(); }, 's');
+
 /* 以上为菜单设定 */
 
 
@@ -162,6 +188,9 @@ function runAsync(url,send_type,data_ry) {
 (function() {
     'use strict';
 
+    try{console.log("TinyMode: " + GM_getValue('Settings'));} catch{GM_setValue('Settings', "0000");}
+    if(GM_getValue('Settings') == null || GM_getValue('Settings') == "" || GM_getValue('Settings') == undefined){GM_setValue('Settings', "0000");}
+
     if(window.location.href.split("@")[0] == ReaderUrl){
         var data = window.location.href.split("@")[1]; /*课程ID*/
         var ver = window.location.href.split("@")[2]; /*版本号在破解字典中的位置*/
@@ -175,7 +204,13 @@ function runAsync(url,send_type,data_ry) {
         runAsync(api + "?coursewareId=" + data + "&version=" + (verlist[ver] + adds) + "&resolution=960_640","GET","content=erwer").then((result)=>{ return result; }).then(function(result){
             var filelist = eval("("+result+")");
             if(filelist.message != "error"){
-                for(var i = 0; i <= MaxPageNum; i ++){ try{ obj[filelist.data[i].pageIndex] = filelist.data[i].downloadUrl; } catch(e){} /*将课件按照顺序给obj变量赋值*/ }
+                for(var i = 0; i <= MaxPageNum; i ++){
+                    try{
+                        obj[filelist.data[i].pageIndex] = filelist.data[i].downloadUrl;
+                    } catch(e){}
+                    /*将课件按照顺序给obj变量赋值*/
+                }
+
                 /*将obj中的课件按顺序以html的形式写入dochtml，以及生成分享链接*/
                 for(i = 0; i <= MaxPageNum; i ++){
                     if(obj[i] != undefined) {
@@ -205,28 +240,39 @@ function runAsync(url,send_type,data_ry) {
                                 .printBtn{ margin:10px; } a{ color:#FFF; text-decoration:none; } </style>`;
 
                 var body = `<body>
-                    <div class="ctrl msg" title="(版本: ` + (verlist[ver] + adds) + `)">
-                        <a href="` + ReaderUrl + `@` + data + `@` + ver + `@` + title + `@` + (adds - 1) + `">◀</a>
-                        &nbsp;共` + PageCnt + `页&nbsp;
-                        <a href="` + ReaderUrl + `@` + data + `@` + ver + `@` + title + `@` + (adds + 1) + `">▶</a>
-                    </div>
-                    <div class="ctrl share" title="右键此处，点击复制链接">
-                        <a href="` + ShareReaderUrl + `#` + ShareData + `" target="_blank">分享</a>
-                    </div>  <!--共享按钮-->
-                    <center>` + dochtml + `<button onclick="this.remove();printmode();" class="ctrl printBtn">打印&nbsp;&amp;&nbsp;PDF存储模式</button></center></body>`;
+                        <div class="ctrl msg" title="(版本: ` + (verlist[ver] + adds) + `)">
+                            <a href="` + ReaderUrl + `@` + data + `@` + ver + `@` + title + `@` + (adds - 1) + `">◀</a>
+                            &nbsp;共` + PageCnt + `页&nbsp;
+                            <a href="` + ReaderUrl + `@` + data + `@` + ver + `@` + title + `@` + (adds + 1) + `">▶</a>
+                        </div>
+                       <div class="ctrl share" title="右键此处，复制链接">
+                            <a href="` + ShareReaderUrl + `#` + ShareData + `" target="_blank">分享</a>
+                        </div>  <!--共享按钮-->
+                        <center>
+                            ` + dochtml + `
+                            <button onclick="this.remove();printmode();" class="ctrl printBtn">打印&nbsp;&amp;&nbsp;PDF存储模式</button>
+                        </center>
+                    </body>`;
 
                 document.write(header + script + body);
-
             } else {
                 ver = new Number(ver) + 1;
                 if (verlist[ver] != undefined) { location.href = ReaderUrl + "@" + data + "@" + ver + "@" + title + "@0"; }
-                else document.write("<title>出现问题</title><h2>抱歉，无法为您获取课件</h2><hr><b>你可以尝试更新该脚本以取得最新的技术支持。</b>");
+                else document.write("<title>出现问题</title><h2>抱歉，无法为您获取课件</h2><hr><b>说实话，您现在除了好好听课什么也做不了。</b>");
 
             }
         });
 
     } else if (window.location.href.split("/")[3] == "preview" || window.location.href.split("/")[3] == "course"){
-        if (GM_getValue('Settings')[0] == "1"){ setTimeout(function() { try{ let ad1 = document.getElementsByClassName('download-app-1s9WLH')[0]; ad1.remove(); } catch(e){} /*移除首页手机软件下载广告*/ }, 1000); }
+        if (GM_getValue('Settings')[0] == "1"){
+            setTimeout(function(){
+                try{
+                    let ad1 = document.getElementsByClassName('download-app-1s9WLH')[0];
+                    ad1.remove();
+                } catch(e){}
+                /*移除首页手机软件下载广告*/
+            }, 1000);
+        }
 
     } else if (window.location.href.split("/")[3] == "slive" && window.location.href.split("/")[5].split("?")[0] == "room"){
         setTimeout(function() {
@@ -237,12 +283,15 @@ function runAsync(url,send_type,data_ry) {
 
             if(GM_getValue('Settings')[3] == "1"){
                 let MsgTextarea = document.getElementsByClassName("live-chat-send-msg-txt")[0];
-                MsgTextarea.innerText = AutoAnswerText; MsgTextarea.focus();
-                /*自动填充功能*/
+                MsgTextarea.innerText = AutoAnswerText;
+                MsgTextarea.focus();
+                /*自动填充问候语功能*/
+                let evt = document.createEvent("HTMLEvents");
+                evt.initEvent("change", false, true);
+                MsgTextarea.dispatchEvent(evt);
             }
 
             if (GM_getValue('Settings')[0] == "1"){ try{ document.getElementsByClassName('live-download live-topbar-item')[0].setAttribute("style", "display:none;"); } catch(e){} /*移除教室内手机软件下载广告*/ }
         }, 4000);
-
     }
 })();
